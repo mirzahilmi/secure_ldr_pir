@@ -6,7 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/go-chi/chi/v5"
-	"github.com/mirzahilmi/go-fast/internal/common/middleware"
+	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/middleware"
 	"github.com/rs/zerolog/log"
 )
 

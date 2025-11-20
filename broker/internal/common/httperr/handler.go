@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/danielgtaylor/huma/v2"
-	_errors "github.com/mirzahilmi/go-fast/internal/common/errors"
+	_errors "github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/errors"
 	"github.com/rs/zerolog/log"
 )
 

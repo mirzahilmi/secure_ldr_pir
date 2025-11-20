@@ -14,9 +14,9 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/go-chi/chi/v5"
-	"github.com/mirzahilmi/go-fast/internal/common/config"
-	"github.com/mirzahilmi/go-fast/internal/common/constant"
-	"github.com/mirzahilmi/go-fast/internal/common/logging"
+	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/config"
+	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/constant"
+	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/logging"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -48,7 +48,7 @@ func main() {
 		}
 		ctx, mainCancel := context.WithCancel(context.Background())
 
-		oapi := huma.DefaultConfig("Go-Fast - OpenAPI 3.0", "1.0.0")
+		oapi := huma.DefaultConfig("Secured LDR PIR Sensor Broker - OpenAPI 3.0", "1.0.0")
 		oapi.DocsPath = ""
 		oapi.Info.Description = constant.OAPI_SPEC_DESCRIPTION
 		oapi.Components.SecuritySchemes = map[string]*huma.SecurityScheme{

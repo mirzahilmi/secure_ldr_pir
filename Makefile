@@ -1,15 +1,16 @@
-.PHONY: help
-help:
-	@echo "No helps today, check the Makefile 😛"
+.PHONY: broker
+broker:
+	cd ./broker/ && \
+		docker build --tag ghcr.io/mirzahilmi/secure_ldr_pir_broker:latest .
 
-.PHONY: dev
-dev:
-	air -c ./broker/.air.toml
+.PHONY: broker.dev
+broker.dev:
+	cd ./broker/ && make dev
 
-.PHONY: devstack
-devstack:
-	docker compose --file ./.dev/compose.yaml --env-file ./.dev/.env up --detach
+.PHONY: broker.staging
+broker.staging:
+	cd ./broker/ && make staging
 
-.PHONY: devstack.rm
-devstack.rm:
-	docker compose --file ./.dev/compose.yaml --env-file ./.dev/.env down
+.PHONY: broker.fresh
+broker.fresh:
+	cd ./broker/ && make staging.fresh

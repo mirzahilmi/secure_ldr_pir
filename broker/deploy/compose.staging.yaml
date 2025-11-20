@@ -1,0 +1,31 @@
+---
+name: secure_ldr_pir
+
+networks:
+  inbound_gateway_network:
+    external: true
+  global_internal_network:
+    external: true
+
+services:
+  backend:
+    image: ghcr.io/mirzahilmi/secure_ldr_pir_broker:latest
+    command: ["--log-level=debug", "--config=/tmp/config.json"]
+    restart: unless-stopped
+    volumes:
+      - ../config.json:/tmp/config.json
+    networks:
+      - global_internal_network
+      - inbound_gateway_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend-${APP_NAME}.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.backend-${APP_NAME}.entrypoints=web"
+      - "traefik.http.routers.backend-${APP_NAME}.service=backend-${APP_NAME}"
+      - "traefik.http.services.backend-${APP_NAME}.loadbalancer.server.port=3000"
+      - "traefik.http.routers.backend-${APP_NAME}.middlewares=cors-backend-${APP_NAME}"
+      - "traefik.http.middlewares.cors-backend-${APP_NAME}.headers.accessControlAllowMethods=*"
+      - "traefik.http.middlewares.cors-backend-${APP_NAME}.headers.accessControlAllowHeaders=*"
+      - "traefik.http.middlewares.cors-backend-${APP_NAME}.headers.accessControlAllowOriginList=${OIDC_URL}"
+      - "traefik.http.middlewares.cors-backend-${APP_NAME}.headers.accessControlMaxAge=100"
+      - "traefik.http.middlewares.cors-backend-${APP_NAME}.headers.addVaryHeader=true"

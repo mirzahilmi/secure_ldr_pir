@@ -17,4 +17,9 @@ WORKDIR /bin
 COPY --from=builder --chown=nonroot:nonroot /artifact/program /bin
 USER nonroot
 
+# see https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#labelling-container-images
+LABEL "org.opencontainers.image.source"="https://github.com/mirzahilmi/secure_ldr_pir"
+LABEL "org.opencontainers.image.description"="🔒 Secured LDR & PIR in transit sensor readings"
+LABEL "org.opencontainers.image.licenses"="AGPL-3.0"
+
 ENTRYPOINT ["/bin/program"]

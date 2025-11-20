@@ -1,4 +1,4 @@
-module github.com/mirzahilmi/go-fast
+module github.com/mirzahilmi/secure_ldr_pir/broker
 
 go 1.25.2
 

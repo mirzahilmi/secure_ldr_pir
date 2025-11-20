@@ -6,10 +6,10 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/mirzahilmi/go-fast/internal/common/constant"
-	"github.com/mirzahilmi/go-fast/internal/common/errors"
-	"github.com/mirzahilmi/go-fast/internal/common/httperr"
-	"github.com/mirzahilmi/go-fast/internal/common/middleware"
+	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/constant"
+	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/errors"
+	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/httperr"
+	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/middleware"
 )
 
 type handler struct {

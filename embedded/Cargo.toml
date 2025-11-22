@@ -1,5 +1,5 @@
 [package]
-name = "kriptografi-tugas-akhir"
+name = "secure-ldr-pir"
 version = "0.1.0"
 authors = ["Syahreza-Ferdian <syahrezafistiferdian32@gmail.com>"]
 edition = "2021"
@@ -7,7 +7,7 @@ resolver = "2"
 rust-version = "1.77"
 
 [[bin]]
-name = "kriptografi-tugas-akhir"
+name = "secure-ldr-pir"
 harness = false # do not use the built-in cargo test harness -> resolve rust-analyzer errors
 
 [profile.release]
@@ -25,6 +25,11 @@ experimental = ["esp-idf-svc/experimental"]
 [dependencies]
 log = "0.4"
 esp-idf-svc = "0.51"
+# esp-idf-hal = "0.45.2"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+anyhow = "1.0.100"
+chrono = "0.4.42"
 
 # --- Optional Embassy Integration ---
 # esp-idf-svc = { version = "0.51", features = ["critical-section", "embassy-time-driver", "embassy-sync"] }
@@ -45,3 +50,4 @@ esp-idf-svc = "0.51"
 
 [build-dependencies]
 embuild = "0.33"
+dotenvy = "0.15.7"

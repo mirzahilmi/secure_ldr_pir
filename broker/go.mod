@@ -3,12 +3,14 @@ module github.com/mirzahilmi/secure_ldr_pir/broker
 go 1.25.2
 
 require (
+	github.com/cloudflare/circl v1.6.1
 	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/danielgtaylor/huma/v2 v2.34.1
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/gorilla/websocket v1.5.3
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
+	golang.org/x/crypto v0.38.0
 )
 
 require (

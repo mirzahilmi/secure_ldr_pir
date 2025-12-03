@@ -1,12 +1,19 @@
 {
   description = "A Nix-flake-based Go development environment";
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
 
   outputs = {
     self,
     nixpkgs,
-  }: let
+    ...
+  } @ inputs: let
     goVersion = 25;
 
     supportedSystems = ["x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin"];
@@ -19,13 +26,25 @@
           };
         });
   in {
-    overlays.default = final: prev: {
-      go = final."go_1_${toString goVersion}";
-    };
+    overlays.default = final: prev:
+      {
+        go = final."go_1_${toString goVersion}";
+      }
+      // import inputs.rust-overlay final prev;
 
     devShells = forEachSupportedSystem ({pkgs}: {
       default = pkgs.mkShell {
-        packages = with pkgs; [
+        nativeBuildInputs = with pkgs; [
+          (rust-bin.stable.latest.default.override {
+            extensions = [
+              "rust-src"
+              "rust-analyzer"
+            ];
+          })
+          lldb
+          pkg-config
+          openssl
+
           air
           go
           gopls

@@ -15,12 +15,8 @@ typedef struct Cipher {
   const char *nonce;
 } Cipher;
 
-void hello_world(void);
-
-void hello_name(const char *name);
-
 /**
  * # Safety
- * It is infact unsafe
+ * Just believe it
  */
 enum Status decrypt(struct Cipher cipher, uint8_t *out, uintptr_t size, uintptr_t *actual_size);

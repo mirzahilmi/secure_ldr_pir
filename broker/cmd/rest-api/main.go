@@ -13,12 +13,18 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/danielgtaylor/huma/v2/humacli"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-chi/chi/v5"
 	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/config"
 	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/constant"
 	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/logging"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
 type options struct {
@@ -37,14 +43,14 @@ func main() {
 		logging.Init(options.LogLevel)
 
 		if options.ConfigPath == "" {
-			log.Fatal().Msg("config: missing CONFIG_PATH")
+			log.Fatal().Msg("broker: missing CONFIG_PATH")
 		}
 		configBytes, err := os.ReadFile(options.ConfigPath)
 		if err != nil {
-			log.Fatal().Err(err).Msg(fmt.Sprintf("config: cannot read file %s", options.ConfigPath))
+			log.Fatal().Err(err).Msg(fmt.Sprintf("broker: cannot read file %s", options.ConfigPath))
 		}
 		if err := json.NewDecoder(bytes.NewBuffer(configBytes)).Decode(&cfg); err != nil {
-			log.Fatal().Err(err).Msg("config: failed to parse config raw bytes to struct")
+			log.Fatal().Err(err).Msg("broker: failed to parse config raw bytes to struct")
 		}
 		ctx, mainCancel := context.WithCancel(context.Background())
 
@@ -72,20 +78,62 @@ func main() {
 			{constant.OAPI_SECURITY_SCHEME: {}},
 		}
 
+		otlpRes, err := resource.Merge(
+			resource.Default(),
+			resource.NewWithAttributes(
+				semconv.SchemaURL,
+				semconv.ServiceName("broker"),
+				semconv.ServiceVersion("0.1.0"),
+			),
+		)
+		if err != nil {
+			log.Fatal().Err(err).Msg("broker: failed to setup otlp resource")
+		}
+
+		exporter, err := otlpmetricgrpc.New(ctx)
+		if err != nil {
+			log.Fatal().Err(err).Msg("broker: failed to setup otlp metric exporter")
+		}
+		meter := metric.NewMeterProvider(
+			metric.WithResource(otlpRes),
+			metric.WithReader(metric.NewPeriodicReader(exporter)),
+		)
+		otel.SetMeterProvider(meter)
+
 		router = chi.NewRouter()
 		if cfg.IsDevelopment {
 			router.Get("/docs", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "text/html")
 				if _, err := w.Write([]byte(constant.OAPI_SPEC_UI)); err != nil {
-					log.Debug().Err(err).Msg("docs: failed to write openapi editor ui")
+					log.Debug().Err(err).Msg("broker: failed to write openapi editor ui")
 				}
 			})
 		}
 
+		mqttOpts := mqtt.NewClientOptions().
+			AddBroker(cfg.Mqtt.BrokerUrl).
+			SetUsername(cfg.Mqtt.Username).
+			SetPassword(cfg.Mqtt.Password).
+			SetClientID(cfg.Mqtt.ClientId).
+			SetCleanSession(true).
+			SetAutoReconnect(true).
+			SetConnectRetry(true).
+			SetConnectRetryInterval(3 * time.Second).
+			SetKeepAlive(10 * time.Second).
+			SetPingTimeout(5 * time.Second).
+			SetWriteTimeout(10 * time.Second).
+			SetDefaultPublishHandler(func(_ mqtt.Client, message mqtt.Message) {
+				log.Warn().Bytes("data", message.Payload()).Msg("broker: mqtt fallback handling")
+			}).
+			SetConnectionLostHandler(func(_ mqtt.Client, err error) {
+				log.Warn().Err(err).Msg("broker: mqtt connection lost")
+			})
+
 		api = humachi.New(router, oapi)
-		if err := setup(ctx); err != nil {
-			log.Fatal().Err(err).Msg("app: failed to setup")
+		if err := setup(ctx, mqttOpts); err != nil {
+			log.Fatal().Err(err).Msg("broker: failed to setup")
 		}
+		mqttClient := mqtt.NewClient(mqttOpts)
 
 		addr := fmt.Sprintf(":%d", cfg.Port)
 		server := http.Server{
@@ -95,9 +143,21 @@ func main() {
 		}
 
 		hooks.OnStart(func() {
-			log.Info().Msg(fmt.Sprintf("http: listening on 0.0.0.0%s", addr))
+			go func() {
+				for {
+					log.Info().Msg(fmt.Sprintf("broker: listening mqtt on broker %s", cfg.Mqtt.BrokerUrl))
+					if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+						log.Fatal().Err(err).Msg("broker: failed connecting to mqtt broker")
+						time.Sleep(2 * time.Second)
+						continue
+					}
+					break
+				}
+			}()
+
+			log.Info().Msg(fmt.Sprintf("broker: listening on 0.0.0.0%s", addr))
 			if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-				log.Fatal().Err(err).Msg(fmt.Sprintf("http: failed to listen on 0.0.0.0%s", addr))
+				log.Fatal().Err(err).Msg(fmt.Sprintf("broker: failed to listen on 0.0.0.0%s", addr))
 			}
 		})
 
@@ -109,10 +169,12 @@ func main() {
 			defer cancel()
 
 			if err := server.Shutdown(ctx); err != nil {
-				log.Fatal().Err(err).Msg("http: failed to shutdown")
+				log.Fatal().Err(err).Msg("broker: failed to shutdown")
 			}
 			mainCancel()
-			log.Info().Msg("http: shut down complete")
+			log.Info().Msg("broker: shut down complete")
+
+			mqttClient.Disconnect(uint(cfg.ShutdownTimeout))
 		})
 	})
 

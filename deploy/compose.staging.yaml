@@ -1,0 +1,19 @@
+---
+name: secure_ldr_pir
+
+networks:
+  global_internal_network:
+    external: true
+
+services:
+  backend:
+    image: ghcr.io/mirzahilmi/secure_ldr_pir_broker:latest
+    restart: unless-stopped
+    command: ["--log-level=debug", "--config=/tmp/config.json"]
+    environment:
+      LOG_LEVEL: debug
+      CONFIG_PATH: /tmp/config.json
+    volumes:
+      - ../broker/config.json:/tmp/config.json
+    networks:
+      - global_internal_network

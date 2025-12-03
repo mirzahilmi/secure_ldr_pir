@@ -4,17 +4,11 @@ import (
 	"context"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/middleware"
 	iot "github.com/mirzahilmi/secure_ldr_pir/broker/internal/iot/port"
-	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/utility"
 	"github.com/rs/zerolog/log"
 )
 
 func setup(ctx context.Context, mqttOpts *mqtt.ClientOptions) error {
-	middleware := middleware.NewMiddleware(api, cfg)
-
-	utility.RegisterHandler(ctx, api, middleware)
-
 	mqttHandlers := []func() (string, byte, func(mqtt.Client, mqtt.Message)){}
 	iotMqttHandlers, err := iot.NewMqttHandlers(ctx)
 	if err != nil {

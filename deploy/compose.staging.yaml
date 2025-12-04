@@ -13,6 +13,7 @@ services:
     environment:
       LOG_LEVEL: debug
       CONFIG_PATH: /tmp/config.json
+      PRIVATE_KEY: ${PRIVATE_KEY:?error}
     volumes:
       - ../broker/config.json:/tmp/config.json
     networks:

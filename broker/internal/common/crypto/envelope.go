@@ -24,7 +24,7 @@ func EnvelopeUnseal(ciphertext, nonce, publicKey string) (string, error) {
 		public_key: _publicKey,
 	}
 	actualSize := new(C.size_t)
-	defer C.free(unsafe.Pointer(actualSize))
+	// defer C.free(unsafe.Pointer(actualSize))
 
 	// probably should check exit code
 	C.decrypt(cipher, nil, 0, actualSize)

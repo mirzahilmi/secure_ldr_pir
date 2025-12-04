@@ -56,10 +56,16 @@ func main() {
 		log.Fatal().Err(err).Msg("broker: failed to setup otlp resource")
 	}
 
-	exporter, err := otlpmetricgrpc.New(ctx)
+	exporter, err := otlpmetricgrpc.New(
+		ctx,
+		otlpmetricgrpc.WithEndpoint(cfg.Otlp.CollectorEndpoint),
+		otlpmetricgrpc.WithInsecure(),
+	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("broker: failed to setup otlp metric exporter")
 	}
+	defer exporter.Shutdown(ctx)
+
 	meter := metric.NewMeterProvider(
 		metric.WithResource(otlpRes),
 		metric.WithReader(metric.NewPeriodicReader(exporter)),
@@ -68,8 +74,6 @@ func main() {
 
 	mqttOpts := mqtt.NewClientOptions().
 		AddBroker(cfg.Mqtt.BrokerUrl).
-		SetUsername(cfg.Mqtt.Username).
-		SetPassword(cfg.Mqtt.Password).
 		SetClientID(cfg.Mqtt.ClientId).
 		SetCleanSession(true).
 		SetAutoReconnect(true).

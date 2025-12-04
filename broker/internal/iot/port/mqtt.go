@@ -34,7 +34,7 @@ func NewMqttHandlers(ctx context.Context) ([]func() (string, byte, func(mqtt.Cli
 		return nil, err
 	}
 	pirGauge, err := meter.Int64Gauge(
-		"sensors.ldr",
+		"sensors.pir",
 		metric.WithDescription("PIR Sensor Reading"),
 		metric.WithUnit("Boolean"),
 	)

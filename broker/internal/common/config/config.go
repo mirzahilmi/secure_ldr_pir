@@ -4,18 +4,15 @@ type Config struct {
 	Port            uint32
 	IsDevelopment   bool
 	ShutdownTimeout int64
-	Oidc            Oidc
 	Mqtt            Mqtt
-}
-
-type Oidc struct {
-	Issuer   string
-	ClientId string
+	Otlp            Otlp
 }
 
 type Mqtt struct {
 	BrokerUrl,
-	Username,
-	Password,
 	ClientId string
+}
+
+type Otlp struct {
+	CollectorEndpoint string
 }

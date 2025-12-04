@@ -4,8 +4,7 @@ use std::{env, path::PathBuf};
 
 fn main() {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let output_file =
-        PathBuf::from(&crate_dir).join("../broker/internal/common/crypto/crypto_bindings.h"); // Output to go-app directory
+    let output_file = PathBuf::from(&crate_dir).join("../internal/common/crypto/crypto_bindings.h"); // Output to go-app directory
 
     cbindgen::Builder::new()
         .with_crate(crate_dir)

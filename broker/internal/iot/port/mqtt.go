@@ -3,6 +3,7 @@ package port
 import (
 	"bytes"
 	"context"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/goccy/go-json"
@@ -14,9 +15,10 @@ import (
 
 type mqttHandler struct {
 	// im not sure we supposed to put context here or if there's any better solution
-	ctx      context.Context
-	ldrGauge metric.Int64Gauge
-	pirGauge metric.Int64Gauge
+	ctx                    context.Context
+	ldrGauge               metric.Int64Gauge
+	pirGauge               metric.Int64Gauge
+	decryptionElapsedGauge metric.Int64Gauge
 }
 
 func NewMqttHandlers(ctx context.Context) ([]func() (string, byte, func(mqtt.Client, mqtt.Message)), error) {
@@ -30,7 +32,7 @@ func NewMqttHandlers(ctx context.Context) ([]func() (string, byte, func(mqtt.Cli
 	if err != nil {
 		log.Error().
 			Err(err).
-			Msg("iot: cannot create meter gauge instance")
+			Msg("iot: cannot create ldr gauge instance")
 		return nil, err
 	}
 	pirGauge, err := meter.Int64Gauge(
@@ -41,11 +43,22 @@ func NewMqttHandlers(ctx context.Context) ([]func() (string, byte, func(mqtt.Cli
 	if err != nil {
 		log.Error().
 			Err(err).
-			Msg("iot: cannot create meter gauge instance")
+			Msg("iot: cannot create pir gauge instance")
+		return nil, err
+	}
+	decryptionElapsedGauge, err := meter.Int64Gauge(
+		"sensors.decryption",
+		metric.WithDescription("Reading Decryption"),
+		metric.WithUnit("Nanoseconds"),
+	)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("iot: cannot create decryption elapsed gauge instance")
 		return nil, err
 	}
 
-	h := mqttHandler{ctx, ldrGauge, pirGauge}
+	h := mqttHandler{ctx, ldrGauge, pirGauge, decryptionElapsedGauge}
 
 	handlers := []func() (string, byte, func(mqtt.Client, mqtt.Message)){
 		func() (string, byte, func(mqtt.Client, mqtt.Message)) {
@@ -65,6 +78,7 @@ func (h *mqttHandler) OnReading(_ mqtt.Client, message mqtt.Message) {
 		return
 	}
 
+	start := time.Now()
 	plaintext, err := crypto.EnvelopeUnseal(
 		encryptedReading.Ciphertext,
 		encryptedReading.Nonce,
@@ -77,6 +91,8 @@ func (h *mqttHandler) OnReading(_ mqtt.Client, message mqtt.Message) {
 			Msg("iot: cannot decode mqtt message to reading struct")
 		return
 	}
+	elapsed := time.Since(start)
+	h.decryptionElapsedGauge.Record(h.ctx, elapsed.Nanoseconds())
 
 	var reading Reading
 	if err := json.NewDecoder(bytes.NewBufferString(plaintext)).Decode(&reading); err != nil {

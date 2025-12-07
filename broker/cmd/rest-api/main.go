@@ -68,7 +68,11 @@ func main() {
 
 	meter := metric.NewMeterProvider(
 		metric.WithResource(otlpRes),
-		metric.WithReader(metric.NewPeriodicReader(exporter)),
+		metric.WithReader(metric.NewPeriodicReader(
+			exporter,
+			// faster read for real-time
+			metric.WithInterval(2*time.Second),
+		)),
 	)
 	otel.SetMeterProvider(meter)
 

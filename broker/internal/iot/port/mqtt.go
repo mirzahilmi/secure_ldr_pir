@@ -18,6 +18,7 @@ type mqttHandler struct {
 	ctx                    context.Context
 	ldrGauge               metric.Int64Gauge
 	pirGauge               metric.Int64Gauge
+	encryptionElapsedGauge metric.Int64Gauge
 	decryptionElapsedGauge metric.Int64Gauge
 }
 
@@ -46,6 +47,17 @@ func NewMqttHandlers(ctx context.Context) ([]func() (string, byte, func(mqtt.Cli
 			Msg("iot: cannot create pir gauge instance")
 		return nil, err
 	}
+	encryptionElapsedGauge, err := meter.Int64Gauge(
+		"sensors.encryption",
+		metric.WithDescription("Reading Encryption"),
+		metric.WithUnit("Nanoseconds"),
+	)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("iot: cannot create decryption elapsed gauge instance")
+		return nil, err
+	}
 	decryptionElapsedGauge, err := meter.Int64Gauge(
 		"sensors.decryption",
 		metric.WithDescription("Reading Decryption"),
@@ -58,7 +70,7 @@ func NewMqttHandlers(ctx context.Context) ([]func() (string, byte, func(mqtt.Cli
 		return nil, err
 	}
 
-	h := mqttHandler{ctx, ldrGauge, pirGauge, decryptionElapsedGauge}
+	h := mqttHandler{ctx, ldrGauge, pirGauge, encryptionElapsedGauge, decryptionElapsedGauge}
 
 	handlers := []func() (string, byte, func(mqtt.Client, mqtt.Message)){
 		func() (string, byte, func(mqtt.Client, mqtt.Message)) {
@@ -77,6 +89,7 @@ func (h *mqttHandler) OnReading(_ mqtt.Client, message mqtt.Message) {
 			Msg("iot: cannot decode mqtt message to reading struct")
 		return
 	}
+	h.encryptionElapsedGauge.Record(h.ctx, int64(encryptedReading.Metric.EncryptTime))
 
 	start := time.Now()
 	plaintext, err := crypto.EnvelopeUnseal(

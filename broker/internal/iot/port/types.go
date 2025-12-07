@@ -4,6 +4,11 @@ type EncryptedReading struct {
 	Header     Header `json:"header"`
 	Ciphertext string `json:"ciphertext"`
 	Nonce      string `json:"nonce"`
+	Metric     Metric `json:"metrics"`
+}
+
+type Metric struct {
+	EncryptTime uint64 `json:"encrypt_time_ns"`
 }
 
 type Header struct {

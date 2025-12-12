@@ -58,3 +58,6 @@ hex = "0.4"
 [build-dependencies]
 embuild = "0.33"
 dotenvy = "0.15.7"
+
+[package.metadata.esp-idf]
+partition_table = { path = "partitions.csv" }

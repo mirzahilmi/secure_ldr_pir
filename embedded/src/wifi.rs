@@ -18,7 +18,7 @@ pub fn connect_wifi(wifi: &mut EspWifi, led: &mut PinDriver<'_, gpio::Gpio2, Out
     let wifi_config = Configuration::Client(ClientConfiguration {
         ssid: ssid.try_into().unwrap(),
         password: password.try_into().unwrap(),
-        auth_method: AuthMethod::WPA2Personal,
+        auth_method: AuthMethod::None,
         ..Default::default()
     });
 
@@ -27,7 +27,7 @@ pub fn connect_wifi(wifi: &mut EspWifi, led: &mut PinDriver<'_, gpio::Gpio2, Out
     wifi.start()?;
     wifi.connect()?;
 
-    log::info!("Connecting to WiFi...");
+    log::info!("Connecting to WiFi network: {} ...", ssid);
 
     while !wifi.is_connected()? {
         led.toggle()?;

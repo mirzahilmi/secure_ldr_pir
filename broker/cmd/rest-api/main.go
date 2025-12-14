@@ -13,7 +13,7 @@ import (
 	"github.com/mirzahilmi/secure_ldr_pir/broker/internal/common/logging"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
@@ -56,10 +56,9 @@ func main() {
 		log.Fatal().Err(err).Msg("broker: failed to setup otlp resource")
 	}
 
-	exporter, err := otlpmetricgrpc.New(
+	exporter, err := otlpmetrichttp.New(
 		ctx,
-		otlpmetricgrpc.WithEndpoint(cfg.Otlp.CollectorEndpoint),
-		otlpmetricgrpc.WithInsecure(),
+		otlpmetrichttp.WithEndpointURL(cfg.Otlp.CollectorEndpoint),
 	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("broker: failed to setup otlp metric exporter")

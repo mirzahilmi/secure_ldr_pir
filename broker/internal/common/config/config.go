@@ -1,8 +1,6 @@
 package config
 
 type Config struct {
-	Port            uint32
-	IsDevelopment   bool
 	ShutdownTimeout int64
 	Mqtt            Mqtt
 	Otlp            Otlp
